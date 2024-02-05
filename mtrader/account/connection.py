@@ -1,9 +1,9 @@
 
 import MetaTrader5 as mt5
 from utils.logs import logger
-from config.settings import (
-    account,
-    )
+from config.settings import TradeConfig
+
+config = TradeConfig()
 
 # connect to MetaTrader 5
 class Connector():
@@ -38,7 +38,7 @@ class Connector():
 
 
 def establish_connection():
-    connector = Connector(**account())
+    connector = Connector(**config.account)
     connector.connect()
     if mt5.terminal_info().connected:
         logger.debug(f"Connected to MetaTrader5.")

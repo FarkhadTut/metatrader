@@ -2,14 +2,16 @@ import MetaTrader5 as mt5
 from datetime import datetime
 import pandas as pd
 from config.settings import (
-    start_year,
+    TradeConfig,
     )
 KEEP_COLUMNS = ['date', 'close']
 
-def load_data(num_ticks):
-    num_ticks = int(num_ticks)
-    hourly_data = mt5.copy_rates_from("EURUSD_i", mt5.TIMEFRAME_H4, datetime.now(), num_ticks)
-    daily_data = mt5.copy_rates_from("EURUSD_i", mt5.TIMEFRAME_D1, datetime.now(), int(num_ticks/5))
+config = TradeConfig()
+
+def load_data():
+    max_ticks = int(config.max_ticks)
+    hourly_data = mt5.copy_rates_from("EURUSD_i", mt5.TIMEFRAME_H4, datetime.now(), max_ticks)
+    daily_data = mt5.copy_rates_from("EURUSD_i", mt5.TIMEFRAME_D1, datetime.now(), int(max_ticks/5))
 
     df_hourly = pd.DataFrame(hourly_data)
     df_daily = pd.DataFrame(daily_data)
@@ -27,5 +29,5 @@ def load_data(num_ticks):
     df['close_daily'] = df['close_daily'].ffill()
     df.dropna(how='any', axis=0, inplace=True)
     df.set_index('date', drop=True, inplace=True)
-    df = df[df.index.year >= int(start_year())]
+    df = df[df.index.year >= int(config.start_year)]
     return df
