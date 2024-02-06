@@ -20,6 +20,12 @@ class TradeConfig():
     @property
     def lot(self):
         return float(self.get_config()['TRADING']['lot'])
+    
+    @property
+    def order_live_hours(self):
+        hours = int(self.get_config()['TRADING']['timeframe']) \
+                * int(self.get_config()['MODEL']['steps'])  
+        return hours
 
     @property
     def stop_loss(self):

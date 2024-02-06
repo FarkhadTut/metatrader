@@ -4,6 +4,7 @@ import pandas as pd
 from config.settings import (
     TradeConfig,
     )
+
 KEEP_COLUMNS = ['date', 'close']
 
 config = TradeConfig()
@@ -30,4 +31,5 @@ def load_data():
     df.dropna(how='any', axis=0, inplace=True)
     df.set_index('date', drop=True, inplace=True)
     df = df[df.index.year >= int(config.start_year)]
+    df = df.shift(freq='8H')
     return df

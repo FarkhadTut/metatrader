@@ -35,13 +35,14 @@ class Database():
         create_query = '''
             CREATE TABLE orders (
                 id INTEGER PRIMARY KEY,
+                position_id INT NOT NULL,
                 magic INTEGER NOT NULL,
                 time_open DATETIME NOT NULL,
                 time_close DATETIME,
                 lot REAL NOT NULL,
+                point INT NOT NULL,
                 symbol TEXT NOT NULL,
                 order_type INTEGER NOT NULL,
-                profit REAL,
                 price_open REAL NOT NULL,
                 price_close REAL,
                 stop_loss REAL,
@@ -51,22 +52,29 @@ class Database():
             '''
         self.execute(create_query)
     
-    def get_orders(self, magic=None):
-        if magic is not None:
-            sql = """SELECT * FROM ORDERS
-                     WHERE magic = (?)
-                     """
-            result = self.cur.execute(sql, (magic,))
-        else:
-            sql = """SELECT * FROM ORDERS """
-            result = self.cur.execute(sql)
-
+    def get_order_by_pid(self, position_id):
+      
+        sql = """SELECT * FROM orders
+                    WHERE position_id = (?)
+                    """
+        result = self.cur.execute(sql, (position_id,))
         orders = result.fetchall()
-        return orders
+        if len(orders) == 0:
+            return 
+        return orders[0]
 
-    def execute(self, sql):
-        self.cur.execute(sql)
-        self.conn.commit()
+    def execute(self, sql, data=None):
+        try:
+            if data is None:
+                self.cur.execute(sql)
+            else:
+                self.cur.execute(sql, data)
+            self.conn.commit()
+            return True
+        except Exception as e:
+            command = sql.split(" ")[0] 
+            logger.error(f'In {command} query. {e}')
+            return False
 
 
     def fit_request_to_database(self, _request):
@@ -79,25 +87,45 @@ class Database():
         
         order_body = {}
         order_body['magic'] = _request['magic']
+        order_body['position_id'] = _request['position_id']
         order_body['time_open'] = datetime.datetime.now()
         order_body['time_close'] = datetime.datetime.now()
         order_body['lot'] = _request['volume']
+        order_body['point'] = _request['point']
         order_body['symbol'] = _request['symbol']
         order_body['order_type'] = _request['type']
         order_body['price_open'] = _request['price']
         order_body['stop_loss'] = _request['sl']
         order_body['take_profit'] = _request['tp']
-        order_body['profit'] = None
         order_body['price_close'] = None
         
         return order_body
 
-    def order_exists(self, magic):
-        orders = self.get_orders(magic)
-        return len(orders) == 1
+    def order_exists(self, position_id):
+        order = self.get_order_by_pid(position_id)
+        if order is None:
+            logger.error(f"Order with position_id={position_id} not found in database.")
+        return True
 
-    def save_close_order(self, _request):
-        order_body = self.fit_request_to_database(_request)
+    def magic_exists(self, magic):
+        check_magic_query = """ SELECT COUNT(*) FROM orders WHERE magic=? """
+        data = (magic,)
+        result = self.cur.execute(check_magic_query, data)
+        orders_count = result.fetchall()[0][0]
+        return orders_count > 0
+
+    def save_close(self, position_id, price_close):
+        if self.order_exists(position_id):
+            closed_by = 'bot'
+            save_close_query = """
+                UPDATE orders 
+                SET price_close=?, closed_by=?  
+                WHERE position_id=?
+            """
+            data = (price_close, closed_by, position_id)    
+            result = self.execute(save_close_query, data)
+            return result
+        return False
  
     
 
@@ -109,18 +137,15 @@ class Database():
         insert_query = f'''
             INSERT INTO orders (
                 {', '.join(fields)}
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         '''
         data = [order_body[f] for f in fields]
         self.cur.execute(insert_query, data)
         self.conn.commit() 
 
-    def save_order(self, _request):
-        magic = _request['magic']
-        if self.order_exists(magic):
-            self.save_close_order(_request)
-        else:
-            self.save_open_order(_request)
+    def save_open(self, _request):
+        position_id = _request['position_id']
+        self.save_open_order(_request)
         
 
     def close(self):
