@@ -114,10 +114,18 @@ class OrderRequest():
             return False
         
     def close_trade(self):
-        result = mt5.Close(
-            self.symbol, 
-            ticket=self.position_id
-            )
+        while True:
+            try:
+                result = mt5.Close(
+                    self.symbol, 
+                    ticket=self.position_id
+                    )
+                if result == True:
+                    break
+                else:
+                    raise Exception('Could not close order position_id={self.position_id}, result={result}')
+            except Exception as e:
+                logger.error(f'While closing order. {str(e)}')
         self.is_open = not result
 
         if result:
