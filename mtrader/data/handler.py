@@ -31,5 +31,5 @@ def load_data():
     df.dropna(how='any', axis=0, inplace=True)
     df.set_index('date', drop=True, inplace=True)
     df = df[df.index.year >= int(config.start_year)]
-    df = df.shift(freq='8H')
+    df = df.shift(freq='4H')
     return df

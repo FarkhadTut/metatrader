@@ -42,6 +42,11 @@ class TradeConfig():
     @property
     def max_ticks(self):
         return int(self.get_config()['DATA']['max_ticks'])
+    
+
+    @property
+    def max_orders(self):
+        return int(self.get_config()['TRADING']['max_orders'])
 
     @property
     def account(self):
