@@ -8,6 +8,7 @@ from forecast.prediction import get_predictions
 import time
 from config.settings import TradeConfig
 from utils.logs import logger
+from utils.functions import minutes_between_datetimes
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
@@ -48,24 +49,36 @@ if __name__ == '__main__':
                     open_trades.append((order_request, cur_trade_time))
                 
 
-        else:
+      
 
+        for open_order in market_state.open_orders_by_bot():
+            position_id = int(open_order[1])
+            _type = 'BUY' if int(open_order[8]) == 1 else 'SELL'
+            time_open = open_order[3].split('.')[0]
+            time_open = datetime.strptime(time_open, '%Y-%m-%d %H:%M:%S')
+            time_now = datetime.now()
+            hours_passed = minutes_between_datetimes(time_open, time_now)/60
+            hours_passed = round(hours_passed, 1)
+            logger.info(f"OrderID {position_id} ({_type}): {hours_passed} hours passed.")
+            if hours_passed >= 12:
+                market_state.close_trade(position_id)
+        
             ### not finished. check all open trades' time and print how long left and close if expired
-            logger.error(f'There are {open_trades_count} trades going on.')
-            position_id = market_state.open_position_id()
-            wait_minutes, wait_hours = market_state.get_wait_time()
-            logger.info(f"There is an unclosed order in database. Time to wait (h): {wait_hours}")
-            prediction = get_predictions(df)
-            order_request = OrderRequest(
-                prediction=prediction
-                )
-            print(order_request)
-            time.sleep(wait_minutes * 60)
-            market_state.close_trade(position_id)
+            # logger.error(f'There are {open_trades_count} trades going on.')
+            # position_id = market_state.open_position_id()
+            # wait_minutes, wait_hours = market_state.get_wait_time()
+            # logger.info(f"There is an unclosed order in database. Time to wait (h): {wait_hours}")
+            # prediction = get_predictions(df)
+            # order_request = OrderRequest(
+            #     prediction=prediction
+            #     )
+            # print(order_request)
+            # time.sleep(wait_minutes * 60)
+            # market_state.close_trade(position_id)
 
 
 
-        time.sleep(3)
+        time.sleep(600)
 
     # shut down connection to MetaTrader 5
     mt5.shutdown()

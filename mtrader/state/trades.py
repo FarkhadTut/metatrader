@@ -47,6 +47,19 @@ class MarketState():
 
         self.orders = orders
         return len(orders)
+    
+
+    def open_orders_by_bot(self):
+        open_trades = self.get_open_trades()
+        orders = []
+        for trade in open_trades:
+            position_id = trade.ticket
+            order = database.get_order_by_pid(position_id)
+            if order is not None:
+                orders.append(order)
+
+        self.orders = orders
+        return orders
 
 
     def get_by_pid(self, position_id):
