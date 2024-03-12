@@ -57,9 +57,11 @@ def undiff_data(df_predictions, df_data, diff_order=None):
     if diff_order is None:
         diff_order = params.diff_order
     shift_len = diff_order - steps
-    diff_1 = df_data.tail(shift_len + 1).head(1)[target_column].values[0]
+    diff_1 = df_data.tail(shift_len).head(1)[target_column].values[0]
     pred = df_predictions['prediction'].values[0]
     pred_undiff = np.exp(pred + np.log(diff_1))
+
+
     return pred_undiff
     # shifted_column = f'close_{diff_order}_hours_ago'
     # df_data[shifted_column] = df_data[target_column].shift(diff_order)

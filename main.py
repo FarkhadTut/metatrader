@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
         for open_order in market_state.open_orders_by_bot():
             position_id = int(open_order[1])
-            _type = 'BUY' if int(open_order[8]) == 1 else 'SELL'
+            _type = 'SELL' if int(open_order[8]) == 1 else 'BUY'
             time_open = open_order[3].split('.')[0]
             time_open = datetime.strptime(time_open, '%Y-%m-%d %H:%M:%S')
             time_now = datetime.now()
