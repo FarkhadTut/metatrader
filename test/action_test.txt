@@ -1,0 +1,1 @@
+{"action": "POSITION_MODIFY", "takeprofit": 1.1983000000000001, "stoploss": 1.2053}

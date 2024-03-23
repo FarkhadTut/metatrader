@@ -123,7 +123,7 @@ class OrderRequest():
                 if result == True:
                     break
                 else:
-                    raise Exception('Could not close order position_id={self.position_id}, result={result}')
+                    raise Exception(f'Could not close order position_id={self.position_id}, result={result}')
             except Exception as e:
                 logger.error(f'While closing order. {str(e)}')
         self.is_open = not result

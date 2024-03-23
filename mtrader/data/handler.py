@@ -28,8 +28,10 @@ def load_data():
     df_daily['date']=pd.to_datetime(df_daily['date'], unit='s')
     df = pd.merge(df_hourly, df_daily, on='date', how='left', suffixes=('_hourly', '_daily'))
     df['close_daily'] = df['close_daily'].ffill()
-    df.dropna(how='any', axis=0, inplace=True)
+    # df.dropna(how='any', axis=0, inplace=True)
     df.set_index('date', drop=True, inplace=True)
     df = df[df.index.year >= int(config.start_year)]
+    df['close_daily'] = df['close_daily'].shift(6)
+    df.dropna(axis=0, how='any', inplace=True)
     df = df.shift(freq='4H')
     return df
