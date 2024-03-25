@@ -8,7 +8,17 @@ import pandas as pd
 from test.actionWriter import actionWriter
 from forecast.prediction import get_predictions
 from mtrader.action.orders import OrderRequest
+from forecast.handlers.data import (
+    diff_data,
+    undiff_data,
+)
+from test.orders import TestOrderRequest
 import sys
+from config.settings import TradeConfig
+from database.connection import Database
+
+database = Database()
+config = TradeConfig()
 
 class DecisionMaker:
 
@@ -17,6 +27,8 @@ class DecisionMaker:
         self.prev_traded_price = 0 # this is the previously traded price for an exisiting position (entry price)
         self.curr_stop_loss = 0 # current stop loss
         self.curr_take_profit = 0 # current take profit
+        self.prev_trade_time = None # previous open trade time
+        self.curr_trade_time = None # current open trade time
 
 
     # for the last candle (data) of the given currency (symbol), provided its historical data(history) predict whether to buy or sell
@@ -27,53 +39,91 @@ class DecisionMaker:
         history_dataframe.drop(columns=['open', 'high', 'low', 'tick_volume', 'pos'], inplace=True)
         history_dataframe.rename(columns={'close': 'close_hourly'}, inplace=True)
         history_dataframe.set_index('date', inplace=True)
-        history_dataframe['close_daily'] = history_dataframe['close_hourly'].shift(freq='-24H')
-        history_dataframe['']
-        print(history_dataframe.head(10))
+        history_dataframe = history_dataframe.shift(freq='4H')
+        history_dataframe['close_daily'] = history_dataframe[history_dataframe['close_hourly'].index.hour == 00]['close_hourly']
+        history_dataframe['close_daily'] = history_dataframe['close_daily'].shift(1)
+        history_dataframe['close_daily'] = history_dataframe['close_daily'].ffill()
+        history_dataframe.dropna(axis=0, inplace=True)
+        # history_dataframe['close_daily'] = history_dataframe[history_dataframe['close_daily'].index.hour == 20]['close_daily']
+        
         # extract meaningful values
         prev_close_price = history[-2][4]
         curr_close_price = history[-1][4]
         curr_high_price = history[-1][2]
         curr_low_price = history[-1][3]
         date = history[-1][0]
-
-        # adjust TP/SL values here, remember to x100 if testing on JPY currency
-        #take_profit = 0.0200
-        take_profit = 0.0050
-        #stop_loss = -0.0250
-        stop_loss = -0.0020
-
-
-        print("-----")
-        print("date: ", date)
-        print("current price is: ", curr_close_price)
-
-        # Run strategy here #
+        # Run strategy here ###########################
         strategy = SimpleMAExponentialMA(history)
-        prediction = get_predictions(history_dataframe)
         
 
         signal_lst, df = strategy.run_sma_ema()
-        signal = signal_lst[0]
+        
+        # signal = signal_lst[0]
+
+        ###############################################
+        # adjust TP/SL values here, remember to x100 if testing on JPY currency
+        #take_profit = 0.0200
+        take_profit = 0.050
+        #stop_loss = -0.0250
+        stop_loss = -0.050
+        # print('Cur time:', date)
         
 
-        # first check if stop loss/take profit has been triggered
+        prediction = get_predictions(history_dataframe)
 
+        # print("-----")
+        # print("date: ", date)
+        # print("current price is: ", curr_close_price)
+
+        
+        if prediction > curr_close_price:
+            signal = 1
+        elif prediction < curr_close_price:
+            signal = -1
+        else:
+            signal = 0
+
+        
+        order = TestOrderRequest(prediction=prediction,
+                                cur_price=curr_close_price,
+                                time_open=date)
+        
+        position_id = database.save_open(order.open_request, test=True)
+
+
+        if self.prev_trade_time is not None:
+            diff_hours = int((date - self.prev_trade_time).total_seconds() / 3600)
+            
+
+            if diff_hours < config.steps * 4:
+                return {"action":"skip"}, 0, self.prev_signal , df
+            else:
+                self.prev_trade_time = None
+                self.prev_signal = 0
+                return {"action":"POSITION_CLOSE_SYMBOL"} , signal, self.prev_signal, df #close
+        else:  
+            self.prev_trade_time = date
+
+
+        print("prev trade time:", self.prev_trade_time)
+
+        
+        # first check if stop loss/take profit has been triggered
         if self.prev_signal == 1 and ((self.curr_take_profit != 0 and curr_high_price >= self.curr_take_profit) or (self.curr_stop_loss != 0 and curr_low_price <= self.curr_stop_loss)):
             self.prev_signal = 0 # since the sl/tp was triggered, we reset position
 
         if self.prev_signal == -1 and ((self.curr_take_profit != 0 and curr_low_price <= self.curr_take_profit) or (self.curr_stop_loss != 0 and curr_high_price >= self.curr_stop_loss)):
             self.prev_signal = 0 # since the sl/tp was triggered, we reset position
         
-        print("signal: ",signal)
-        print("prev_signal: ",self.prev_signal)
+        # print("signal: ",signal)
+        # print("prev_signal: ",self.prev_signal)
         # then we look at the signal returned
         if signal == 1:
 
             # if previous signal was a sell, close off the position
-            if self.prev_signal == -1:
-                self.prev_signal = 0 # make previous signal 0 as we don't have an active position
-                return {"action":"POSITION_CLOSE_SYMBOL"} , signal, self.prev_signal, df #close
+            # if self.prev_signal == -1:
+            #     self.prev_signal = 0 # make previous signal 0 as we don't have an active position
+            #     return {"action":"POSITION_CLOSE_SYMBOL"} , signal, self.prev_signal, df #close
 
             # if previous signal was 0, there was no active position, open a long position
             if self.prev_signal == 0:
@@ -104,10 +154,10 @@ class DecisionMaker:
 
         if signal == -1:
 
-            # if previous signal was a buy, close off the position
-            if self.prev_signal == 1:
-                self.prev_signal = 0 # make previous signal 0 as we don't have an active position
-                return {"action":"POSITION_CLOSE_SYMBOL"} , signal, self.prev_signal, df #close
+            # # if previous signal was a buy, close off the position
+            # if self.prev_signal == 1:
+            #     self.prev_signal = 0 # make previous signal 0 as we don't have an active position
+            #     return {"action":"POSITION_CLOSE_SYMBOL"} , signal, self.prev_signal, df #close
 
             # if previous signal was 0, there was no active position, open a short position
             if self.prev_signal == 0:

@@ -7,7 +7,7 @@ import numpy as np
 import json
 from .output import output
 
-FOLDER = 'C:/Users/Фархад/AppData/Roaming/MetaQuotes/Tester/36A64B8C79A6163D85E6173B54096685/Agent-127.0.0.1-3001/MQL5/Files'
+FOLDER = 'C:/Users/Фархад/AppData/Roaming/MetaQuotes/Tester/36A64B8C79A6163D85E6173B54096685/Agent-127.0.0.1-3000/MQL5/Files'
 class actionWriter():
     def __init__(self, trading_algrithm):
         self.trading_algrithm = trading_algrithm
@@ -71,9 +71,9 @@ class actionWriter():
                             if pre_Timebar != newTimebar:
                                 pre_Timebar = copy.deepcopy(newTimebar)
                                 
-                                print("Timebar: ",pre_Timebar)
-                                print("curr_close_price: ",curr_close_price)
-                                print("curr_position", curr_position)
+                                # print("Timebar: ",pre_Timebar)
+                                # print("curr_close_price: ",curr_close_price)
+                                # print("curr_position", curr_position)
 
                                 # code from example2.py, send the data to the main_DecisionMaker.py
                                 predict_result, signal, prev_signal, df  = self.trading_algrithm.predict(contents)
@@ -96,7 +96,8 @@ class actionWriter():
                                 time.sleep(0.003)
 
                     except Exception as e:
-                        raise e
+                        # raise e
+                        pass
                         
                 else:
                     # print("File is empty")

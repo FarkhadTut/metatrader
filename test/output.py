@@ -27,3 +27,4 @@ class output():
         df_output = pd.DataFrame(output_lst).transpose()
         df_output.columns=['date','close_price', 'signal','prev_signal','action']
         df_output.to_csv("output.csv", index=False)
+        df_output.to_excel("output.xlsx")

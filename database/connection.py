@@ -23,6 +23,7 @@ class Database():
                 self.conn = sqlite3.connect(self.db_path)
                 self.cur = self.conn.cursor()
                 self.create_table()
+                self.create_test_table()
 
             logger.debug(f'SQLite: {sqlite3.version}')
             return True
@@ -50,6 +51,26 @@ class Database():
                 closed_by INT
             );
             '''
+        self.execute(create_query)
+
+    def create_test_table(self):
+        
+        create_query = '''
+            CREATE TABLE test_orders (
+                id INTEGER PRIMARY KEY,
+                time_open DATETIME NOT NULL,
+                time_close DATETIME,
+                lot REAL NOT NULL,
+                point INT NOT NULL,
+                symbol TEXT NOT NULL,
+                order_type INTEGER NOT NULL,
+                price_open REAL NOT NULL,
+                price_close REAL,
+                stop_loss REAL,
+                take_profit REAL
+            );
+            '''
+        
         self.execute(create_query)
     
     def get_order_by_pid(self, position_id):
@@ -142,10 +163,33 @@ class Database():
         data = [order_body[f] for f in fields]
         self.cur.execute(insert_query, data)
         self.conn.commit() 
+        last_id = self.cur.lastrowid
+        return last_id
 
-    def save_open(self, _request):
-        position_id = _request['position_id']
-        self.save_open_order(_request)
+    def save_test_open_order(self, _request):
+        
+        fields = list(_request.keys())
+        
+        insert_query = f'''
+            INSERT INTO test_orders (
+                {', '.join(fields)}
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        '''
+        _request['time_close'] = None
+        _request['price_close'] = None
+        data = [_request[f] for f in fields]
+        self.cur.execute(insert_query, data)
+        self.conn.commit() 
+        last_id = self.cur.lastrowid
+        return last_id
+
+    def save_open(self, _request, test=False):
+        if not test:
+            position_id = _request['position_id']
+            return self.save_open_order(_request)
+        else:
+            return self.save_test_open_order(_request)
+
         
 
     def close(self):

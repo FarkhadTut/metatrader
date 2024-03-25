@@ -14,9 +14,9 @@ def diff_data(df, diff_order=None, method=None):
     if diff_order is None:
         diff_order = params.diff_order
     for column in df.columns:
-        if method is None or method == 'pct_change':
+        if method == 'pct_change':
             df[column] = df[column].pct_change(diff_order)
-        elif method == 'log':
+        elif method is None or method == 'log':
             df[column] = np.log(df[column]) - np.log(df[column].shift(diff_order))
     # df.dropna(how='any', axis=0, inplace=True)
     df = df.tail(-diff_order)

@@ -26,6 +26,11 @@ class TradeConfig():
         hours = int(self.get_config()['TRADING']['timeframe']) \
                 * int(self.get_config()['MODEL']['steps'])  
         return hours
+    
+    @property
+    def steps(self):
+        steps_ = int(self.get_config()['MODEL']['steps'])  
+        return steps_
 
     @property
     def stop_loss(self):
