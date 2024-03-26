@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 params = ModelParams()
 
 def load_model():
-    filename = 'VAR_eur_mape_1440v240_step=4_do=5_l=9_mape=49.0364_2024-03-24.pkl'
+    filename = 'VAR_eur_mape_1440v240_step=14_do=14_l=3_mape=141453.5_2024-03-25.pkl'
     file_path = os.path.join(os.getcwd(), 'forecast', 'model', 'evolution', filename) 
     model = load_pickle(file_path)
     return model

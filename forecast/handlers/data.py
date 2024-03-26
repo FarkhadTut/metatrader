@@ -56,7 +56,8 @@ def undiff_data(df_predictions, df_data, diff_order=None):
     steps = params.steps
     if diff_order is None:
         diff_order = params.diff_order
-    shift_len = diff_order - steps
+    shift_len = diff_order - steps + 1
+    
     diff_1 = df_data.tail(shift_len).head(1)[target_column].values[0]
     pred = df_predictions['prediction'].values[0]
     pred_undiff = np.exp(pred + np.log(diff_1))

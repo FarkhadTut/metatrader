@@ -36,14 +36,10 @@ class DecisionMaker:
 
         # convert history to pandas dataframe
         history_dataframe = pd.DataFrame(history, columns=("date", "open", "high", "low", "close", "tick_volume","pos"))
-        history_dataframe.drop(columns=['open', 'high', 'low', 'tick_volume', 'pos'], inplace=True)
+        history_dataframe.drop(columns=['open', 'high', 'low', 'pos'], inplace=True)
         history_dataframe.rename(columns={'close': 'close_hourly'}, inplace=True)
         history_dataframe.set_index('date', inplace=True)
         history_dataframe = history_dataframe.shift(freq='4H')
-        history_dataframe['close_daily'] = history_dataframe[history_dataframe['close_hourly'].index.hour == 00]['close_hourly']
-        history_dataframe['close_daily'] = history_dataframe['close_daily'].shift(1)
-        history_dataframe['close_daily'] = history_dataframe['close_daily'].ffill()
-        history_dataframe.dropna(axis=0, inplace=True)
         # history_dataframe['close_daily'] = history_dataframe[history_dataframe['close_daily'].index.hour == 20]['close_daily']
         
         # extract meaningful values
