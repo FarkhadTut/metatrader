@@ -85,7 +85,7 @@ class actionWriter():
                                 self.write_strategies(predict_result)
                                 # self.cleanFile(filename)
                                 
-                                self.save2csv(output_save, predict_result, contents, signal, prev_signal, df)
+                                # self.save2csv(output_save, predict_result, contents, signal, prev_signal, df)
 
                                 check_point += 1
 

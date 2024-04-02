@@ -49,8 +49,23 @@ def remove_seasonality(df):
 
 
 
+def undiff_data(df_predictions, df_data, target_col=None, diff_order=None):
+    if diff_order is None:
+        diff_order = params.diff_order
+    if target_col is None:
+        target_col = 'prediction'
+    shifted_column = f'close_{diff_order}_hours_ago'
+    df_data[shifted_column] = df_data[params.target_column].shift(diff_order)
 
-def undiff_data(df_predictions, df_data, diff_order=None):
+    df_data[shifted_column] = np.log(df_data[shifted_column])
+    df_data[target_col] = df_data[shifted_column] + df_predictions[target_col]
+    df_data[target_col] = np.exp(df_data[target_col])
+    df_data[shifted_column] = df_data[params.target_column].shift(diff_order)
+    return df_data
+
+## somehow it doesnt work
+def mt_undiff_data(df_predictions, df_data, diff_order=None):
+
     target_column = params.target_column
     diff_order = params.diff_order
     steps = params.steps
