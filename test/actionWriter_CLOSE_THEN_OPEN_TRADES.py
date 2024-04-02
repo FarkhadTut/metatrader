@@ -83,6 +83,11 @@ class actionWriter():
                                 print("predict_result","\t",predict_result)
                                 
                                 # write the result to txt or csv 
+                                if 'close_action' in predict_result.keys():
+                                    self.write_strategies({'action': predict_result['close_action']})
+                                    time.sleep(0.1)
+                                    del predict_result['close_action']
+
                                 self.write_strategies(predict_result)
                                 # self.cleanFile(filename)
                                 
