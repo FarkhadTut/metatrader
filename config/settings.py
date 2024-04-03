@@ -28,9 +28,19 @@ class TradeConfig():
         return hours
     
     @property
+    def lags(self):
+        lags_ = int(self.get_config()['MODEL']['lags'])    
+        return lags_
+    
+    @property
     def steps(self):
         steps_ = int(self.get_config()['MODEL']['steps'])  
         return steps_
+
+    @property
+    def train_size(self):
+        train_size_ = float(self.get_config()['MODEL']['train_size'])  
+        return train_size_
 
     @property
     def stop_loss(self):

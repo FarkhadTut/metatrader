@@ -12,12 +12,12 @@ params = ModelParams()
 
 
 
-def get_predictions(df_data):
+def get_predictions(df_data, model):
     df = diff_data(df_data.copy(), method='log')
 
-    df_prediction = predict(df)
+    df_prediction = predict(df, model)
 
-    df_predict_merged = undiff_data(df_prediction.copy(), df_data.copy())
+    df_predict_merged = undiff_data(df_prediction.copy(), df_data.copy(), target_col='prediction')
     
 
     prediction= df_predict_merged['prediction'].values[-1]

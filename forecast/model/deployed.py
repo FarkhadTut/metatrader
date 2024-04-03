@@ -9,15 +9,15 @@ from dateutil.relativedelta import relativedelta
 params = ModelParams()
 
 def load_model():
-    filename = 'VAR_eur_mape_1440v240_step=3_do=3_l=9_mape=105.999_2024-04-02.pkl'
+    filename = 'VAR_eur_mape_1440v240_step=1_do=1_l=2_mape=102.3236_2024-04-03.pkl'
     file_path = os.path.join(os.getcwd(), 'forecast', 'model', 'evolution', filename) 
     model = load_pickle(file_path)
     return model
 
-model = load_model()
+# model = load_model()
 
 
-def predict(df):
+def predict(df, model):
     steps = params.steps
     lags = params.lags
     time_prediction = df.tail(params.steps).index.values

@@ -1,7 +1,6 @@
 
-from test.trading_strategies.sma_ema import SimpleMAExponentialMA
+from statsmodels.tsa.api import VAR
 # optional import, only use for demo
-from datetime import datetime
 #using pip install panda if missing modules pandas
 import pandas as pd
 # non-optional import:
@@ -12,6 +11,7 @@ from forecast.handlers.data import (
     diff_data,
     undiff_data,
 )
+from test.data import load_data
 from test.orders import TestOrderRequest
 import sys
 from config.settings import TradeConfig
@@ -31,15 +31,22 @@ class DecisionMaker:
         self.max_orders = 2
         self.orders = []
 
+        df_train, df_test = load_data()
+        df_train = diff_data(df_train.copy(), method='log')
+        model = VAR(df_train)
+        self.model_fit = model.fit(maxlags=config.lags, trend='n', ic='fpe')
+
     # for the last candle (data) of the given currency (symbol), provided its historical data(history) predict whether to buy or sell
     def predict(self, history):
 
         # convert history to pandas dataframe
         history_dataframe = pd.DataFrame(history, columns=("date", "open", "high", "low", "close", "tick_volume","pos"))
-        history_dataframe.drop(columns=['open', 'high', 'low', 'pos'], inplace=True)
-        history_dataframe.rename(columns={'close': 'close_hourly'}, inplace=True)
+        history_dataframe.drop(columns=['close', 'high', 'low', 'pos'], inplace=True)
+        history_dataframe.rename(columns={'open': 'close_hourly'}, inplace=True)
         history_dataframe.set_index('date', inplace=True)
-        history_dataframe = history_dataframe.shift(freq='4H')
+        history_dataframe = history_dataframe.shift(freq='-4H')
+        print(history_dataframe)
+        exit()
         # history_dataframe = history_dataframe.head(-1)
         # history_dataframe['close_daily'] = history_dataframe[history_dataframe['close_daily'].index.hour == 20]['close_daily']
         
@@ -58,7 +65,7 @@ class DecisionMaker:
         # print('Cur time:', date)
         
 
-        prediction = get_predictions(history_dataframe)
+        prediction = get_predictions(history_dataframe, self.model_fit)
         curr_close_price = history_dataframe.tail(1).values[0][0]
         # print("-----")
         # print("date: ", date)
