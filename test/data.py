@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from dateutil.relativedelta import relativedelta
+from utils.functions import generate_time_list
 import datetime
 from config.settings import TradeConfig
 config = TradeConfig()
@@ -12,6 +13,20 @@ FILES = {
 
 START_YEAR = 2015
 END_YEAR = None
+
+def imputation(df):
+    start_datetime = df.index.values[0]
+    end_datetime = df.index.values[-1]
+    datetime_list = generate_time_list(start_datetime, end_datetime)
+    df_new = pd.DataFrame(columns=df.columns, 
+                 index=datetime_list)
+    df_new = pd.merge(df_new, df, how='left', right_index=True, left_index=True, suffixes=('_nan', ''))
+    drop_columns = [c for c in df_new.columns if '_nan' in c]
+    df_new.drop(columns=drop_columns, inplace=True)
+    df_new = df_new.interpolate()
+
+    return df_new
+
 
 def read_data(path, start_year=None, end_year=None):
     df = pd.read_csv(f'test\\data\\{path}', header=None, sep='\t', skiprows=1)
@@ -33,6 +48,7 @@ def read_data(path, start_year=None, end_year=None):
 
     df = df[['close', 'tick_volume']]
     df.rename(columns={'close': 'close_hourly'}, inplace=True)
+    df = imputation(df)
     return df
 
 
@@ -55,25 +71,25 @@ def diff_data(df, diff_order=None, method=None):
     
 ## removing seasonality
 def remove_seasonality(df):
-        df_month_mean = df.groupby(by=df.index.month).mean()
-        df_month_mean.reset_index(drop=False, inplace=True)
-        df_month_mean.rename(columns={'index': 'month'}, inplace=True)
-        df['month'] = df.index.month
-        df.reset_index(drop=False, inplace=True)
-        # df['price_month_mean'] = df.index.map(lambda x: df_month_mean.loc[int(x.split('-')[1]), 'price_mean'])
-        # print(df)
-        df = pd.merge(df, df_month_mean, on=['month'], how='left', suffixes=('', '_mean'))
-        price_columns = [c for c in df.columns if '_mean' not in c and 'room' in c]
-        for c in price_columns:
-            c_mean = c+'_mean'
-            df[c] = df[c] - df[c_mean]
-            df.drop(c_mean, axis=1, inplace=True)
+    df_month_mean = df.groupby(by=df.index.month).mean()
+    df_month_mean.reset_index(drop=False, inplace=True)
+    df_month_mean.rename(columns={'index': 'month'}, inplace=True)
+    df['month'] = df.index.month
+    df.reset_index(drop=False, inplace=True)
+    # df['price_month_mean'] = df.index.map(lambda x: df_month_mean.loc[int(x.split('-')[1]), 'price_mean'])
+    # print(df)
+    df = pd.merge(df, df_month_mean, on=['month'], how='left', suffixes=('', '_mean'))
+    price_columns = [c for c in df.columns if '_mean' not in c and 'room' in c]
+    for c in price_columns:
+        c_mean = c+'_mean'
+        df[c] = df[c] - df[c_mean]
+        df.drop(c_mean, axis=1, inplace=True)
 
-        df.set_index('index', inplace=True)
-        df.drop(['month'], axis=1, inplace=True)
-        df.drop([c for c in df.columns if c.endswith('_mean')], axis=1, inplace=True)
-        df.index = pd.to_datetime(df.index).tz_localize(None)
-        return df
+    df.set_index('index', inplace=True)
+    df.drop(['month'], axis=1, inplace=True)
+    df.drop([c for c in df.columns if c.endswith('_mean')], axis=1, inplace=True)
+    df.index = pd.to_datetime(df.index).tz_localize(None)
+    return df
 
 
 def forecast(model_fit, df_test):

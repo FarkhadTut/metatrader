@@ -4,10 +4,25 @@ import pandas as pd
 from config.settings import (
     TradeConfig,
     )
+from utils.functions import generate_time_list
 
 KEEP_COLUMNS = ['date', 'close']
 
 config = TradeConfig()
+
+
+def imputation(df):
+    start_datetime = df.index.values[0]
+    end_datetime = df.index.values[-1]
+    datetime_list = generate_time_list(start_datetime, end_datetime)
+    df_new = pd.DataFrame(columns=df.columns, 
+                 index=datetime_list)
+    df_new = pd.merge(df_new, df, how='left', right_index=True, left_index=True, suffixes=('_nan', ''))
+    drop_columns = [c for c in df_new.columns if '_nan' in c]
+    df_new.drop(columns=drop_columns, inplace=True)
+    df_new = df_new.interpolate()
+
+    return df
 
 def load_data():
     max_ticks = int(config.max_ticks)

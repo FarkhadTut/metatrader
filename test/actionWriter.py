@@ -7,7 +7,7 @@ import numpy as np
 import json
 from .output import output
 
-FOLDER = 'C:\\Users\\f.tutkabaev\\AppData\\Roaming\\MetaQuotes\\Tester\\36A64B8C79A6163D85E6173B54096685\\Agent-127.0.0.1-3000\\MQL5\\Files'
+FOLDER = 'C:\\Users\\Фархад\\AppData\\Roaming\\MetaQuotes\\Tester\\36A64B8C79A6163D85E6173B54096685\\Agent-127.0.0.1-3000\\MQL5\\Files'
 class actionWriter():
     def __init__(self, trading_algrithm):
         self.trading_algrithm = trading_algrithm

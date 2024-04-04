@@ -16,6 +16,7 @@ from test.orders import TestOrderRequest
 import sys
 from config.settings import TradeConfig
 from database.connection import Database
+from test.data import imputation
 
 database = Database()
 config = TradeConfig()
@@ -36,6 +37,11 @@ class DecisionMaker:
         model = VAR(df_train)
         self.model_fit = model.fit(maxlags=config.lags, trend='n', ic='fpe')
 
+        # self.df_predictions = pd.read_excel('test\\predictions\\df_predictions.xlsx')
+        # self.df_predictions.set_index('datetime', inplace=True)
+        # self.df_predictions = self.df_predictions.shift(-config.steps)
+
+
     # for the last candle (data) of the given currency (symbol), provided its historical data(history) predict whether to buy or sell
     def predict(self, history):
 
@@ -44,9 +50,9 @@ class DecisionMaker:
         history_dataframe.drop(columns=['close', 'high', 'low', 'pos'], inplace=True)
         history_dataframe.rename(columns={'open': 'close_hourly'}, inplace=True)
         history_dataframe.set_index('date', inplace=True)
-        history_dataframe = history_dataframe.shift(freq='-4H')
-        print(history_dataframe)
-        exit()
+        history_dataframe = imputation(history_dataframe)
+        # history_dataframe = history_dataframe.shift(freq='-4H')
+        
         # history_dataframe = history_dataframe.head(-1)
         # history_dataframe['close_daily'] = history_dataframe[history_dataframe['close_daily'].index.hour == 20]['close_daily']
         
@@ -67,6 +73,15 @@ class DecisionMaker:
 
         prediction = get_predictions(history_dataframe, self.model_fit)
         curr_close_price = history_dataframe.tail(1).values[0][0]
+
+        ######## take prdictions from file ##########################################
+        # if date in self.df_predictions.index:
+        #     prediction = self.df_predictions.loc[date, 'prediction']
+        # else:
+        #     return {'action': 'skip'}
+        # if pd.isna(prediction):
+        #     return {'action': 'skip'}
+        ########################################################################
         # print("-----")
         # print("date: ", date)
         # print("current price is: ", curr_close_price)
@@ -76,6 +91,7 @@ class DecisionMaker:
             signal = 1
         elif prediction < curr_close_price:
             signal = -1
+        
 
         # close_dict = {}
         # if len(self.orders) != 0:
@@ -106,7 +122,7 @@ class DecisionMaker:
                     "takeprofit": curr_close_price + take_profit,
                     "stoploss": curr_close_price - stop_loss}
 
-        if signal == -1:
+        elif signal == -1:
             self.prev_signal = signal
             self.prev_traded_price = curr_close_price
             self.curr_stop_loss = curr_close_price + stop_loss
@@ -114,6 +130,8 @@ class DecisionMaker:
             action_dict = {"action":"ORDER_TYPE_SELL", #sell
                     "takeprofit": curr_close_price - take_profit,
                     "stoploss": curr_close_price + stop_loss}
+        
+            
 
         self.orders.append({'date': date})
         # action_dict = action_dict | close_dict
