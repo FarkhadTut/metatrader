@@ -48,8 +48,8 @@ def read_data(path, start_year=None, end_year=None):
 
     df = df[['close', 'tick_volume']]
     df.rename(columns={'close': 'close_hourly'}, inplace=True)
-    df = imputation(df)
-    return df
+    df_new = imputation(df)
+    return df_new
 
 
 # differencing to remove trend

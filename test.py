@@ -17,6 +17,7 @@ import sys
 from config.settings import TradeConfig
 from database.connection import Database
 from test.data import imputation
+import datetime
 
 database = Database()
 config = TradeConfig()
@@ -32,11 +33,7 @@ class DecisionMaker:
         self.max_orders = 2
         self.orders = []
 
-        df_train, df_test = load_data()
-        df_train = diff_data(df_train.copy(), method='log')
-        model = VAR(df_train)
-        self.model_fit = model.fit(maxlags=config.lags, trend='n', ic='fpe')
-
+        self.df_data = pd.DataFrame(columns=['datetime','close_hourly','tick_volume', 'prediction'])
         # self.df_predictions = pd.read_excel('test\\predictions\\df_predictions.xlsx')
         # self.df_predictions.set_index('datetime', inplace=True)
         # self.df_predictions = self.df_predictions.shift(-config.steps)
@@ -57,7 +54,11 @@ class DecisionMaker:
         # history_dataframe['close_daily'] = history_dataframe[history_dataframe['close_daily'].index.hour == 20]['close_daily']
         
         # extract meaningful values
-        curr_close_price = history[-1][4]
+        # curr_close_price = history[-1][4]
+        # curr_tick_volume = history[-1][5]
+
+        curr_close_price = history_dataframe.tail(1)['close_hourly'].values[0]
+        curr_tick_volume = history_dataframe.tail(1)['tick_volume'].values[0]
         date = history[-1][0]
         
 
@@ -71,12 +72,22 @@ class DecisionMaker:
         # print('Cur time:', date)
         
 
-        prediction = get_predictions(history_dataframe, self.model_fit)
+        prediction = get_predictions(history_dataframe)
+        df_current = pd.DataFrame(columns=['datetime','close_hourly', 'tick_volume', 'prediction'],
+                                    data=[[date, curr_close_price, curr_tick_volume, prediction]])
+        self.df_data = df_current if self.df_data.empty else pd.concat([self.df_data, df_current], axis=0)
+        self.df_data['datetime'] = pd.to_datetime(self.df_data['datetime'])
+        self.df_data.reset_index(drop=True, inplace=True)
+        # self.df_data.set_index('datetime', inplace=True)
+        self.df_data.to_excel('test\\predictions\\df_data_test.xlsx')          
         curr_close_price = history_dataframe.tail(1).values[0][0]
+
+        if pd.to_datetime(date).date() < datetime.date(2022,12,1):
+            return {'action': 'skip'}
 
         ######## take prdictions from file ##########################################
         # if date in self.df_predictions.index:
-        #     prediction = self.df_predictions.loc[date, 'prediction']
+        #     prediction = self.df_predictions.shift(-config.steps).loc[date, 'prediction']
         # else:
         #     return {'action': 'skip'}
         # if pd.isna(prediction):
