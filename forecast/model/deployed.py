@@ -8,7 +8,7 @@ import datetime
 params = ModelParams()
 
 def load_model():
-    filename = 'VAR_eur_mape_1440v240_step=3_do=7_l=6_mape=66.002_2024-04-05.pkl'
+    filename = 'VAR_eur_mape_1440v240_step=5_do=24_l=19_mape=70.827_2024-04-05.pkl'
     file_path = os.path.join(os.getcwd(), 'forecast', 'model', 'evolution', filename) 
     model = load_pickle(file_path)
     return model

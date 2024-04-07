@@ -59,9 +59,9 @@ class DecisionMaker:
 
         curr_close_price = history_dataframe.tail(1)['close_hourly'].values[0]
         curr_tick_volume = history_dataframe.tail(1)['tick_volume'].values[0]
-        date = history[-1][0]
+        date = history_dataframe.tail(1).index.values[0]
         
-
+        
         
         ###############################################
         # adjust TP/SL values here, remember to x100 if testing on JPY currency
@@ -79,8 +79,11 @@ class DecisionMaker:
         self.df_data['datetime'] = pd.to_datetime(self.df_data['datetime'])
         self.df_data.reset_index(drop=True, inplace=True)
         # self.df_data.set_index('datetime', inplace=True)
+        if pd.to_datetime(history_dataframe.index.values[-1]).date() == datetime.date(2022,12,27):
+            print(self.df_data.tail(12))
+            print(history_dataframe.tail(12))
+            exit()
         self.df_data.to_excel('test\\predictions\\df_data_test.xlsx')          
-        curr_close_price = history_dataframe.tail(1).values[0][0]
 
         if pd.to_datetime(date).date() < datetime.date(2022,12,1):
             return {'action': 'skip'}
