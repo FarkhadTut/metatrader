@@ -18,6 +18,7 @@ from config.settings import TradeConfig
 from database.connection import Database
 from test.data import imputation
 import datetime
+from utils.functions import calculate_profit
 
 database = Database()
 config = TradeConfig()
@@ -79,10 +80,13 @@ class DecisionMaker:
         self.df_data['datetime'] = pd.to_datetime(self.df_data['datetime'])
         self.df_data.reset_index(drop=True, inplace=True)
         # self.df_data.set_index('datetime', inplace=True)
-        if pd.to_datetime(history_dataframe.index.values[-1]).date() == datetime.date(2022,12,27):
-            print(self.df_data.tail(12))
-            print(history_dataframe.tail(12))
-            exit()
+        # if pd.to_datetime(history_dataframe.index.values[-1]).date() > datetime.date(2023,3,1):
+        #     print(self.df_data.tail(12))
+        #     print(history_dataframe.tail(12))
+        
+        #     exit()
+
+        calculate_profit(self.df_data.copy()).to_excel('test\\predictions\\df_data_test_profit.xlsx')       
         self.df_data.to_excel('test\\predictions\\df_data_test.xlsx')          
 
         if pd.to_datetime(date).date() < datetime.date(2022,12,1):

@@ -25,8 +25,6 @@ if __name__ == '__main__':
     while True:
         open_trades_count = market_state.count_open_orders()
         df = load_data()
-        df.to_excel('data_daily_hourly.xlsx')
-        exit()
         cur_trade_time = df.index[-1]
         # next_trade_time = cur_trade_time + relativedelta(hours=4)
         # time_now = datetime.now()
@@ -34,7 +32,6 @@ if __name__ == '__main__':
         order_request = OrderRequest(
             prediction=prediction
             )
-        exit(order_request)
         if open_trades_count == 0:
             prediction = get_predictions(df)
             order_request = OrderRequest(
